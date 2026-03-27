@@ -16,21 +16,50 @@ function addTask(title, desc, column) {
   div.setAttribute("draggable", "true");
 
   div.innerHTML = `
-        <h2>${title}</h2>
-        <p>${desc}</p>
-        <button>Delete</button>
+        <div class="task-content">
+          <h2>${title}</h2>
+          <p>${desc}</p>
+        </div>
+        <div class="task-actions">
+          <button class="move-btn">Move</button>
+          <button class="delete-btn">Delete</button>
+        </div>
     `;
 
   column.appendChild(div);
 
-  div.addEventListener("drag", (e) => {
-    dragElement = div;
+  const moveBtn = div.querySelector(".move-btn");
+  const deleteBtn = div.querySelector(".delete-btn");
+
+  moveBtn.addEventListener("click", () => {
+    const currentColumnId = div.parentElement.id;
+    let nextColumn;
+
+    if (currentColumnId === "todo") {
+      nextColumn = progress;
+    } else if (currentColumnId === "progress") {
+      nextColumn = done;
+    } else {
+      nextColumn = todo;
+    }
+
+    nextColumn.appendChild(div);
+    taskUpdateCount();
   });
 
-  const deleteBtn = div.querySelector("button");
   deleteBtn.addEventListener("click", () => {
     div.remove();
     taskUpdateCount();
+  });
+
+  div.addEventListener("dragstart", (e) => {
+    dragElement = div;
+    div.classList.add("dragging");
+  });
+
+  div.addEventListener("dragend", () => {
+    dragElement = null;
+    div.classList.remove("dragging");
   });
 
   return div;
@@ -39,7 +68,7 @@ function addTask(title, desc, column) {
 function taskUpdateCount() {
   columns.forEach((col) => {
     const tasks = col.querySelectorAll(".task");
-    const count = col.querySelector(".right");
+    const countDisplay = col.querySelector(".right");
 
     tasksData[col.id] = Array.from(tasks).map((task) => {
       return {
@@ -49,7 +78,7 @@ function taskUpdateCount() {
     });
 
     localStorage.setItem("tasks", JSON.stringify(tasksData));
-    count.textContent = tasks.length;
+    countDisplay.textContent = tasks.length;
   });
 }
 
@@ -66,11 +95,6 @@ if (localStorage.getItem("tasks")) {
   }
 }
 
-task.forEach((task) => {
-  task.addEventListener("drag", (e) => {
-    dragElement = task;
-  });
-});
 
 function addDragEvent(column) {
   column.addEventListener("dragenter", (e) => {
